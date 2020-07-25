@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+		body{
+			margin: 0;
+			padding: 0;
+			width:100vw;
+			height:100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		.chessBoard{
+			border: 5px solid black;
+			width:500px;
+			height:500px;
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.cell{
+			height:calc(100% / 8);
+			width:calc(100% / 8);
+			outline: 1px solid black;
+			justify-content: center;
+			align-items: center;
+			display: flex;
+		}
+		.cell.dark{
+			background-color: lightgray;
+		}
+	</style>
+</head>
+<body>
+
+	<div id="target" class="chessBoard">
+
+	</div>
+
+	<script type="text/javascript" src="app.js"></script>
+
+</body>
+</html>
