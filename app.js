@@ -7,13 +7,11 @@ class Chess {
         this.black = []
 
         this.createPieces()
-        this.createBoard()
+        this.createEmptyBoard()
         this.setBoard()
         this.drawBoard()
-        log(this)
     }
-
-    createBoard() {
+    createEmptyBoard() {
         this.board = []
         //Create board array
         for (var x = 0; x < 8; x++) {
@@ -26,46 +24,53 @@ class Chess {
         log(this.board)
     }
     setBoard() {
-    		log(this.black)
-    		log(this.white)
-    		log("mapping black")
     		var x = 0;
         this.black.map(piece => {
         		x++
-            log(x,piece)
-            log(this.board)
             this.board[piece.x][piece.y] = piece
         })
-    		log("mapping white")
         this.white.map(piece => {
         		x++
-            log(x,piece)
-            log(this.board)
             this.board[piece.x][piece.y] = piece
-            // this.board[piece.x][piece.y] = piece
         })
     }
-    drawBoard() {
+    drawBoard(MA) {
         var switcher = false
+        this.target.innerHTML = ""
         this.board.map((row, x) => {
             switcher = !switcher
             row.map((cell, y) => {
                 switcher = !switcher
-                this.target.appendChild(this.createCell(cell, x, y, switcher ? "dark" : ""))  
+                var coloration = switcher ? "dark" : ""
+                if(MA?.moves.filter((item)=>{return item.x == x && item.y == y}).length){
+                	coloration = "move"
+                }else if(MA?.attacks.filter((item)=>{return item.x == x && item.y == y}).length){
+                	coloration = "take"
+                }
+                this.target.appendChild(this.createCell(cell, x, y, coloration))  
             })
         })
     }
-    createCell(cell, x, y, color) {
+    createCell(cell, x, y, dark) {
     		var div = document.createElement("div")
     		div.classList.add("cell")
-    		div.classList.add(x)
-    		div.classList.add(y)
-    		color ? div.classList.add(color) : null;
-    		
-
+    		div.dataset.x = x
+    		div.dataset.y = y
+    		dark ? div.classList.add(dark) : null;
+    		cell?.color == "black" ? div.classList.add("black") : null;
     		div.innerHTML = `${cell?.name || "" }`
+
+    		//CLICK LISTENER
+    		var that = this
+    		var theCell = cell
     		div.addEventListener('click', function(e){
-    			alert("bob")
+    			
+    			var moves = theCell.getMoves(that.board)
+    			var attacks = theCell.getAttacks(that.board)
+    			log(theCell, moves, attacks)
+    			var pieceActions = {}
+
+    			that.drawBoard({moves, attacks})
     		})
         return div 
     }
@@ -119,21 +124,39 @@ class Chess {
 }
 
 class ChessPiece {
-    constructor(moves, color, x, y) {
-    		this.name = moves.name
-        this.moves = moves
-        this.move(x, y)
+    constructor(stats, color, x, y) {
+
+    		this.name = stats.name
+        this.moves = stats.move
+        this.color = color
+        this.attacks = stats.attack
+        this.infinite = stats.infinite
+        this.moveTo(x, y)
     }
-    move(x, y) {
+    moveTo(x, y) {
         this.x = x
         this.y = y
     }
+    // getMovesAttacks(board){
+    // 	return {moves:this.getMoves(board), attacks:this.getAttacks(board)}
+    // }
     getMoves(board) {
-        return this.moves.map(this.checkMove, board).filter(item => item)
+    	log("moves", this.moves)
+      return this.moves?.filter( (move) => {
+      	return (board[move.x] && board[move.x][move.y]) 
+      }) || []
     }
-    checkMove(item, board) {
-
+    getAttacks(board){
+    	log("attacks", this.attacks)
+    	return this.attacks?.filter( (move) => {
+    		return (board[move.x] && board[move.x][move.y]) 
+    	}) || []
     }
+    // checkMove(move) {
+    // 	if(board[move.x] && board[move.x][move.y]){
+    // 		return true
+    // 	}
+    // }
 }
 
 
