@@ -1,15 +1,169 @@
 const log = console.log
 
+var pawnStats = {
+    name: "pawn",
+    direction: 1,
+    move: [{
+        x: 1,
+        y: 0
+    }],
+    attack: [{
+        x: 1,
+        y: 1
+    }, {
+        x: 1,
+        y: -1
+    }]
+}
+
+var rookStats = {
+    name: "rook",
+    attack: [{
+        x: 1,
+        y: 0,
+        infinite: true
+    }, {
+        x: -1,
+        y: 0,
+        infinite: true
+    }, {
+        x: 0,
+        y: 1,
+        infinite: true
+    }, {
+        x: 0,
+        y: -1,
+        infinite: true
+    }]
+}
+
+var knightStats = {
+    name: "knight",
+    attack: [{
+        x: 2,
+        y: 1
+    }, {
+        x: -2,
+        y: 1
+    }, {
+        x: 2,
+        y: -1
+    }, {
+        x: -2,
+        y: -1
+    }, {
+        x: 1,
+        y: 2
+    }, {
+        x: 1,
+        y: -2
+    }, {
+        x: -1,
+        y: 2
+    }, {
+        x: -1,
+        y: -2
+    }]
+}
+
+var bishopStats = {
+    name: "bishop",
+    attack: [{
+        x: 1,
+        y: 1,
+        infinite: true
+    }, {
+        x: -1,
+        y: 1,
+        infinite: true
+    }, {
+        x: 1,
+        y: -1,
+        infinite: true
+    }, {
+        x: -1,
+        y: -1,
+        infinite: true
+    }]
+}
+
+var queenStats = {
+    name: "queen",
+    attack: [{
+        x: 1,
+        y: 1,
+        infinite: true
+    }, {
+        x: -1,
+        y: 1,
+        infinite: true
+    }, {
+        x: 1,
+        y: -1,
+        infinite: true
+    }, {
+        x: -1,
+        y: -1,
+        infinite: true
+    }, {
+        x: 1,
+        y: 0,
+        infinite: true
+    }, {
+        x: -1,
+        y: 0,
+        infinite: true
+    }, {
+        x: 0,
+        y: 1,
+        infinite: true
+    }, {
+        x: 0,
+        y: -1,
+        infinite: true
+    }]
+}
+
+var kingStats = {
+    name: "king",
+    attack: [{
+        x: 1,
+        y: 1
+    }, {
+        x: 0,
+        y: 1
+    }, {
+        x: -1,
+        y: 1
+    }, {
+        x: 1,
+        y: 0
+    }, {
+        x: -1,
+        y: 0
+    }, {
+        x: 1,
+        y: -1
+    }, {
+        x: 0,
+        y: -1
+    }, {
+        x: -1,
+        y: -1
+    }]
+}
+
 class Chess {
     constructor(target, size) {
         this.target = target
         this.white = []
         this.black = []
 
-        this.createPieces()
         this.createEmptyBoard()
-        this.setBoard()
+        this.createPieces()
+        // this.setBoard()
         this.drawBoard()
+        this.activePiece = null
     }
     createEmptyBoard() {
         this.board = []
@@ -24,14 +178,12 @@ class Chess {
         log(this.board)
     }
     setBoard() {
-    		var x = 0;
+        var x = 0;
         this.black.map(piece => {
-        		x++
-            this.board[piece.x][piece.y] = piece
+            x++
         })
         this.white.map(piece => {
-        		x++
-            this.board[piece.x][piece.y] = piece
+            x++
         })
     }
     drawBoard(MA) {
@@ -42,115 +194,176 @@ class Chess {
             row.map((cell, y) => {
                 switcher = !switcher
                 var coloration = switcher ? "dark" : ""
-                if(MA?.moves.filter((item)=>{return item.x == x && item.y == y}).length){
-                	coloration = "move"
-                }else if(MA?.attacks.filter((item)=>{return item.x == x && item.y == y}).length){
-                	coloration = "take"
+                if (MA?.moves.filter((item) => { return item.x == x && item.y == y }).length) {
+                    coloration = "move"
+                } else if (MA?.attacks.filter((item) => { return item.x == x && item.y == y }).length) {
+                    coloration = "take"
                 }
-                this.target.appendChild(this.createCell(cell, x, y, coloration))  
+                this.target.appendChild(this.createCell(cell, x, y, coloration))
             })
         })
     }
-    createCell(cell, x, y, dark) {
-    		var div = document.createElement("div")
-    		div.classList.add("cell")
-    		div.dataset.x = x
-    		div.dataset.y = y
-    		dark ? div.classList.add(dark) : null;
-    		cell?.color == "black" ? div.classList.add("black") : null;
-    		div.innerHTML = `${cell?.name || "" }`
+    createCell(cell, x, y, coloration) {
+        var div = document.createElement("div")
+        div.classList.add("cell")
+        div.dataset.x = x
+        div.dataset.y = y
+        coloration ? div.classList.add(coloration) : null;
+        cell?.color == "black" ? div.classList.add("black") : null;
+        div.innerHTML = `${cell?.name || "" }`
 
-    		//CLICK LISTENER
-    		var that = this
-    		var theCell = cell
-    		div.addEventListener('click', function(e){
-    			
-    			var moves = theCell.getMoves(that.board)
-    			var attacks = theCell.getAttacks(that.board)
-    			log(theCell, moves, attacks)
-    			var pieceActions = {}
+        //CLICK LISTENER
+        var that = this
+        var thePiece = cell || {}
+        var theX = x
+        var theY = y
+        var col = coloration
+        var cel = cell
+        div.addEventListener('click', function(e) {
+        	log(thePiece)
+        	var moves = []
+					var attacks = []
+        	if(thePiece.getMoves){
+            moves = thePiece?.getMoves(that.board,theX, theY) || []
+        	}
+        	if(thePiece.getAttacks){
+            attacks = thePiece?.getAttacks(that.board,theX, theY) || []
+        	}
+        	if(col == "move" || col == "take"){
+        		that.board[theX][theY] = that.activePiece.thePiece
+        		that.board[that.activePiece.x][that.activePiece.y] = null
+        		that.activePiece = null
+        	}else{
+		        that.activePiece = {x:theX, y:theY, thePiece: thePiece}
+        	}
+        	
+        	log(that)
+    	    log(this.activePiece, thePiece, moves, attacks)
+    
 
-    			that.drawBoard({moves, attacks})
-    		})
-        return div 
+          that.drawBoard({ moves, attacks })
+        })
+        return div
     }
-    createPieces() {
+    createPieces(board) {
 
         var p = []
 
-        var pawnStats = { name: "pawn", direction: 1, move: [{ x: 0, y: 1 }], attack: [{ x: 1, y: 1 }, { x: -1, y: 1 }] }
-        var rookStats = { name: "rook", attack: [{ x: 1, y: 0, infinite: true }, { x: -1, y: 0, infinite: true }, { x: 0, y: 1, infinite: true }, { x: 0, y: -1, infinite: true }] }
-        var knightStats = { name: "knight", attack: [{ x: 2, y: 1 }, { x: -2, y: 1 }, { x: 2, y: -1 }, { x: -2, y: -1 }, { x: 1, y: 2 }, { x: 1, y: -2 }, { x: -1, y: 2 }, { x: -1, y: -2 }] }
-        var bishopStats = { name: "bishop", attack: [{ x: 1, y: 1, infinite: true }, { x: -1, y: 1, infinite: true }, { x: 1, y: -1, infinite: true }, { x: -1, y: -1, infinite: true }] }
-        var queenStats = { name: "queen", attack: [{ x: 1, y: 1, infinite: true }, { x: -1, y: 1, infinite: true }, { x: 1, y: -1, infinite: true }, { x: -1, y: -1, infinite: true }, { x: 1, y: 0, infinite: true }, { x: -1, y: 0, infinite: true }, { x: 0, y: 1, infinite: true }, { x: 0, y: -1, infinite: true }] }
-        var kingStats = { name: "king", attack: [{ x: 1, y: 1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 }] }
+        this.board[3][4] = new Piece(kingStats, "white",)
 
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 0))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 1))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 2))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 3))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 4))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 5))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 6))
-        this.white.push(new ChessPiece(pawnStats, "white", 1, 7))
-        this.white.push(new ChessPiece(rookStats, "white", 0, 0))
-        this.white.push(new ChessPiece(rookStats, "white", 0, 7))
-        this.white.push(new ChessPiece(knightStats, "white", 0, 1))
-        this.white.push(new ChessPiece(knightStats, "white", 0, 6))
-        this.white.push(new ChessPiece(bishopStats, "white", 0, 2))
-        this.white.push(new ChessPiece(bishopStats, "white", 0, 5))
-        this.white.push(new ChessPiece(queenStats, "white", 0, 3))
-        this.white.push(new ChessPiece(kingStats, "white", 0, 4))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 0, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 1, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 2, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 3, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 4, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 5, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 6, board))
+        // this.white.push(new ChessPiece(pawnStats, "white", 1, 7, board))
+        // this.white.push(new ChessPiece(rookStats, "white", 0, 0, board))
+        // this.white.push(new ChessPiece(rookStats, "white", 0, 7, board))
+        // this.white.push(new ChessPiece(knightStats, "white", 0, 1, board))
+        // this.white.push(new ChessPiece(knightStats, "white", 0, 6, board))
+        // this.white.push(new ChessPiece(bishopStats, "white", 0, 2, board))
+        // this.white.push(new ChessPiece(bishopStats, "white", 0, 5, board))
+        // this.white.push(new ChessPiece(queenStats, "white", 0, 3, board))
+        // this.white.push(new ChessPiece(kingStats, "white", 0, 4, board))
 
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 0))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 1))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 2))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 3))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 4))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 5))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 6))
-        this.black.push(new ChessPiece(pawnStats, "black", 6, 7))
-        this.black.push(new ChessPiece(rookStats, "black", 7, 0))
-        this.black.push(new ChessPiece(rookStats, "black", 7, 7))
-        this.black.push(new ChessPiece(knightStats, "black", 7, 1))
-        this.black.push(new ChessPiece(knightStats, "black", 7, 6))
-        this.black.push(new ChessPiece(bishopStats, "black", 7, 2))
-        this.black.push(new ChessPiece(bishopStats, "black", 7, 5))
-        this.black.push(new ChessPiece(queenStats, "black", 7, 3))
-        this.black.push(new ChessPiece(kingStats, "black", 7, 4))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 0, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 1, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 2, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 3, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 4, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 5, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 6, board))
+        // this.black.push(new ChessPiece(pawnStats, "black", 6, 7, board))
+        // this.black.push(new ChessPiece(rookStats, "black", 7, 0, board))
+        // this.black.push(new ChessPiece(rookStats, "black", 7, 7, board))
+        // this.black.push(new ChessPiece(knightStats, "black", 7, 1, board))
+        // this.black.push(new ChessPiece(knightStats, "black", 7, 6, board))
+        // this.black.push(new ChessPiece(bishopStats, "black", 7, 2, board))
+        // this.black.push(new ChessPiece(bishopStats, "black", 7, 5, board))
+        // this.black.push(new ChessPiece(queenStats, "black", 7, 3, board))
+        // this.black.push(new ChessPiece(kingStats, "black", 7, 4, board))
 
     }
 
 }
 
-class ChessPiece {
-    constructor(stats, color, x, y) {
+var kingStats = {
+    name: "king",
+    onTaken:function(){
+    	alert('you lose the game')
+    	return 'gameOver'
+    },
+    moves:[],
+    attacks: [
+	    {x: 1,y: 1}, 
+	    {x: 0,y: 1}, 
+			{x: -1,y: 1}, 
+			{x: 1,y: 0}, 
+			{x: -1,y: 0}, 
+			{x: 1,y: -1}, 
+			{x: 0,y: -1}, 
+			{x: -1,y: -1}
+		]
+}
 
-    		this.name = stats.name
-        this.moves = stats.move
+class Piece {
+	constructor(stats){
+		this.name = stats.name
+		this.moves = stats.moves || []
+		this.attacks = stats.attacks || []
+		this.onTaken = stats.onTaken
+		this.onDestination = stats.onDestination
+	}
+	getMoves(board,x,y){
+		log(this.moves)
+		return this.moves
+		.map((m)=>{return {x:m.x + x,y:m.y + y}})
+		.filter((m)=>{return (m.x > 0 && m.x < board.length && m.y > 0 && m.y < board.length)})
+	}
+	getAttacks(board,x,y){
+		log(this.attacks)
+		return this.attacks
+		.map((m)=>{return {x:m.x + x,y:m.y + y}})
+		.filter((m)=>{return (m.x >= 0 && m.x < board.length && m.y >= 0 && m.y < board.length)})
+	}
+	onTaken(){
+
+	}
+	onDestination(){
+
+	}
+}
+
+class ChessPiece {
+    constructor(stats, color, x, y, board) {
+        log(stats.move)
+        this.movePattern = stats.move
+        this.attackPattern = stats.attack
+        this.name = stats.name
         this.color = color
-        this.attacks = stats.attack
         this.infinite = stats.infinite
-        this.moveTo(x, y)
+        this.moveTo(x, y, board)
     }
-    moveTo(x, y) {
+    moveTo(x, y, board) {
         this.x = x
         this.y = y
+        this.board = board
     }
-    // getMovesAttacks(board){
-    // 	return {moves:this.getMoves(board), attacks:this.getAttacks(board)}
-    // }
+    getRelativeMoves(pattern) {
+        var possibleMoves = pattern?.map((singlePattern) => {
+            return { x: singlePattern.x + this.x, y: singlePattern.y + this.y }
+        }).filter((singlePattern) => {
+            return true
+        })
+        return possibleMoves || []
+    }
     getMoves(board) {
-    	log("moves", this.moves)
-      return this.moves?.filter( (move) => {
-      	return (board[move.x] && board[move.x][move.y]) 
-      }) || []
+        return this.getRelativeMoves(this.movePattern)
     }
-    getAttacks(board){
-    	log("attacks", this.attacks)
-    	return this.attacks?.filter( (move) => {
-    		return (board[move.x] && board[move.x][move.y]) 
-    	}) || []
+    getAttacks(board) {
+        return this.getRelativeMoves(this.attackPattern)
     }
     // checkMove(move) {
     // 	if(board[move.x] && board[move.x][move.y]){
